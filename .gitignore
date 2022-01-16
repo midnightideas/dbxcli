@@ -1,0 +1,4 @@
+.gitsecret/keys/random_seed
+!*.secret
+data/main/env-build
+dist

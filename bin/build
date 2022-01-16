@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+base_dir="$(cd "$(dirname "$0")/.." && pwd)"
+
+function errout() {
+  message="$1"
+  echo "❌ $message"
+  exit 1
+}
+
+[[ -z "$CIRCLE_BRANCH" ]] && errout "\$CIRCLE_BRANCH is not defined".
+source "$base_dir"/data/"$CIRCLE_BRANCH"/env-build
+
+dist_dir="$base_dir"/dist
+
+[[ -e "$dist_dir" ]] && rm -rf "$dist_dir"
+mkdir -p "$dist_dir"
+
+template_file="$base_dir"/templates/brew.rb
+current_version="$(gh release list --repo dropbox/dbxcli --limit 1 | awk '{ print $1 }')"
+
+temp_dir="$(mktemp -d)"
+
+url_mac="$(gh release view --repo dropbox/dbxcli --json assets \
+  --jq '.assets[] | select(.name == "dbxcli-darwin-amd64") | .url' "$current_version")"
+echo "URL (Mac): $url_mac"
+wget -q "$url_mac" -O "$temp_dir"/"$app_name"-darwin-amd64
+sha256_darwin="$(sha256sum "$temp_dir"/"$app_name"-darwin-amd64 | awk '{ print $1 }')"
+echo "SHA256 (Mac): $sha256_darwin"
+
+url_linux="$(gh release view --repo dropbox/dbxcli --json assets \
+  --jq '.assets[] | select(.name == "dbxcli-linux-amd64") | .url' "$current_version")"
+echo "URL (Linux): $url_linux"
+wget -q "$url_linux" -O "$temp_dir"/"$app_name"-darwin-amd64
+sha256_linux="$(sha256sum "$temp_dir"/"$app_name"-darwin-amd64 | awk '{ print $1 }')"
+echo "SHA256 (Linux): $sha256_linux"
+
+rm -rf "$temp_dir"
+
+[[ -e "$dist_dir" ]] && rm -rf "$dist_dir"
+mkdir -p "$dist_dir"
+
+sed 's/$version/'${current_version//\//\\\/}'/g;s/$sha256_darwin/'${sha256_darwin//\//\\\/}'/g;s/$sha256_linux/'${sha256_linux//\//\\\/}'/g' \
+  <"$template_file" \
+  >"$dist_dir"/"$app_name".rb
