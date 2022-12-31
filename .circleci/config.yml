@@ -38,7 +38,7 @@ jobs:
           name: 'Build dist'
           command: './bin/build'
       - run:
-          name: 'Upload to server'
+          name: 'Commit to Github'
           command: './bin/deploy'
       - slack/notify:
           event: fail
