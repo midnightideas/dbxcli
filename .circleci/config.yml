@@ -4,42 +4,27 @@ orbs:
   slack: circleci/slack@4.5
 
 workflows:
-
   deploy:
-    jobs:
-      - deploy:
-          context:
-            - slack
-
-  nightly:
-    triggers:
-      - schedule:
-          cron: '0 15 * * *'
-          filters:
-            branches:
-              only:
-                - main
     jobs:
       - deploy:
           context:
             - slack
 
 jobs:
-
   deploy:
     machine: true
     resource_class: midnightideas/outerman
     steps:
       - checkout
       - run:
-          name: 'Reveal git secret'
-          command: 'git secret reveal -f'
+          name: "Reveal git secret"
+          command: "git secret reveal -f"
       - run:
-          name: 'Build dist'
-          command: './bin/build'
+          name: "Build dist"
+          command: "./bin/build"
       - run:
-          name: 'Commit to Github'
-          command: './bin/deploy'
+          name: "Commit to Github"
+          command: "./bin/deploy"
       - slack/notify:
           event: fail
           channel: cicd
